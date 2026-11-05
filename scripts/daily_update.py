@@ -31,6 +31,7 @@ def inventory_report():
 
     lines = [
         f"# Repository Inventory - {TODAY}",
+        f"- Generated at: {datetime.now(IST).strftime('%Y-%m-%d %H:%M:%S IST')}",
         "",
         f"- Total project files: {len(files)}",
         "",
@@ -64,6 +65,7 @@ def quality_report():
 
     lines = [
         f"# Daily Quality Report - {TODAY}",
+        f"- Generated at: {datetime.now(IST).strftime('%Y-%m-%d %H:%M:%S IST')}",
         "",
         "## Validation results",
         "",
@@ -92,11 +94,14 @@ def quality_report():
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1] if len(sys.argv) > 1 else "inventory"
+    mode = sys.argv[1] if len(sys.argv) > 1 else "all"
 
     if mode == "inventory":
         inventory_report()
     elif mode == "quality":
         quality_report()
+    elif mode == "all":
+        inventory_report()
+        quality_report()
     else:
-        raise SystemExit("Unknown mode. Use 'inventory' or 'quality'.")
+        raise SystemExit("Unknown mode. Use 'inventory', 'quality', or 'all'.")
