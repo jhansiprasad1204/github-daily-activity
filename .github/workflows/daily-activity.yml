@@ -2,10 +2,10 @@ name: Daily Repository Maintenance
 
 on:
   schedule:
-    # 6:00 PM IST = 12:30 PM UTC (Daily Inventory Report)
-    - cron: "30 12 * * *"
-    # 6:10 PM IST = 12:40 PM UTC (Daily Quality Report)
-    - cron: "40 12 * * *"
+    # 7:00 AM IST = 1:30 AM UTC (Daily Inventory Report)
+    - cron: "30 1 * * *"
+    # 7:10 AM IST = 1:40 AM UTC (Daily Quality Report)
+    - cron: "40 1 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -45,7 +45,7 @@ jobs:
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "mode=$MANUAL_MODE" >> "$GITHUB_OUTPUT"
-          elif [ "$SCHEDULE" = "30 12 * * *" ]; then
+          elif [ "$SCHEDULE" = "30 1 * * *" ]; then
             echo "mode=inventory" >> "$GITHUB_OUTPUT"
           else
             echo "mode=quality" >> "$GITHUB_OUTPUT"
