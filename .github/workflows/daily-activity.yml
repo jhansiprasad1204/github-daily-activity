@@ -2,10 +2,8 @@ name: Daily Repository Maintenance
 
 on:
   schedule:
-    # 7:00 AM IST = 1:30 AM UTC (Daily Inventory Report)
+    # 7:00 AM IST = 1:30 AM UTC (Daily Maintenance)
     - cron: "30 1 * * *"
-    # 7:10 AM IST = 1:40 AM UTC (Daily Quality Report)
-    - cron: "40 1 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -40,20 +38,15 @@ jobs:
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
-          SCHEDULE: ${{ github.event.schedule }}
           MANUAL_MODE: ${{ inputs.mode }}
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "mode=$MANUAL_MODE" >> "$GITHUB_OUTPUT"
-          elif [ "$SCHEDULE" = "30 1 * * *" ]; then
-            echo "mode=inventory" >> "$GITHUB_OUTPUT"
+            echo "run_count=1" >> "$GITHUB_OUTPUT"
           else
-            echo "mode=quality" >> "$GITHUB_OUTPUT"
+            echo "mode=daily" >> "$GITHUB_OUTPUT"
+            echo "run_count=$(python -c 'import secrets; print(secrets.randbelow(4) + 5)')" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Generate maintenance report
-        run: |
-          python scripts/daily_update.py "${{ steps.task.outputs.mode }}"
 
       - name: Configure Git identity
         env:
@@ -63,13 +56,25 @@ jobs:
           git config user.name "$COMMIT_NAME"
           git config user.email "$COMMIT_EMAIL"
 
-      - name: Commit and push report if changed
+      - name: Generate reports and commit maintenance cycles
+        env:
+          MODE: ${{ steps.task.outputs.mode }}
+          RUN_COUNT: ${{ steps.task.outputs.run_count }}
         run: |
-          git add reports/
-          if git diff --cached --quiet; then
-            echo "No report changes to commit."
+          if [ "$MODE" = "daily" ]; then
+            for ((cycle = 1; cycle <= RUN_COUNT; cycle++)); do
+              python scripts/daily_update.py cycle "$cycle"
+              git add reports/
+              git commit -m "chore: daily maintenance cycle $cycle/$RUN_COUNT [skip ci]"
+            done
           else
+            python scripts/daily_update.py "$MODE"
+            git add reports/
+            if git diff --cached --quiet; then
+              echo "No report changes to commit."
+              exit 0
+            fi
             git commit -m "chore: update daily maintenance reports [skip ci]"
-            git pull --rebase origin main || true
-            git push origin main
           fi
+          git pull --rebase origin main || true
+          git push origin main

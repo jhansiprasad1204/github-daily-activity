@@ -93,6 +93,26 @@ def quality_report():
         raise SystemExit("One or more quality checks failed.")
 
 
+def maintenance_cycle(cycle_number):
+    inventory_report()
+    quality_report()
+
+    output = REPORTS / f"activity-{TODAY}.md"
+    if not output.exists():
+        output.write_text(
+            f"# Daily Maintenance Activity - {TODAY}\n\n",
+            encoding="utf-8",
+        )
+
+    with output.open("a", encoding="utf-8") as activity_log:
+        activity_log.write(
+            f"- Cycle {cycle_number}: "
+            f"{datetime.now(IST).strftime('%Y-%m-%d %H:%M:%S IST')} - "
+            "inventory and quality reports generated.\n"
+        )
+    print(f"Recorded maintenance cycle {cycle_number} in {output}")
+
+
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "all"
 
@@ -100,6 +120,16 @@ if __name__ == "__main__":
         inventory_report()
     elif mode == "quality":
         quality_report()
+    elif mode == "cycle":
+        if len(sys.argv) != 3:
+            raise SystemExit("Cycle mode requires a cycle number.")
+        try:
+            cycle_number = int(sys.argv[2])
+        except ValueError:
+            raise SystemExit("Cycle number must be an integer.")
+        if cycle_number < 1:
+            raise SystemExit("Cycle number must be positive.")
+        maintenance_cycle(cycle_number)
     elif mode == "all":
         inventory_report()
         quality_report()
